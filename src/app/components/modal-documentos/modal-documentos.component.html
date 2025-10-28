@@ -31,53 +31,52 @@
             Arrastra tus archivos o haz clic para seleccionar
           </ngx-dropzone-label>
 
-          <ng-container *ngFor="let f of existingFiles">
-            <ngx-dropzone-preview
-              [file]="{ name: f.edo_nomfil, type: f.tipo, size: 0 }"
-              [removable]="false"
-              (click)="verArchivoExisting(f)"
-              style="cursor: pointer;"
-            >
-              <ngx-dropzone-label>
-                <div class="dz-file">
-                  <ng-template [ngIf]="f.tipo && f.tipo.startsWith('image/')">
-                    <i class="ri-image-2-line dz-icon"></i>
-                  </ng-template>
-                  <ng-template [ngIf]="!f.tipo || !f.tipo.startsWith('image/')">
-                    <i class="ri-file-pdf-line dz-icon" *ngIf="f.tipo==='application/pdf'"></i>
-                    <i class="ri-file-2-line dz-icon" *ngIf="f.tipo!=='application/pdf'"></i>
-                  </ng-template>
-                  <div class="dz-text">
-                    <div class="dz-name">{{ f.edo_numdoc }}</div>
-                    <div class="dz-meta">{{ getFileSize(f.edo_tamfil) }}</div>
-                    <div class="dz-meta">Existente</div>
-                  </div>
-                </div>
-              </ngx-dropzone-label>
-              <ngx-dropzone-remove-badge
-                *ngIf="f.chk_botanu === 1"
-                (click)="onRemoveExisting(f)"
-                title="Eliminar archivo"
+          <ng-container *ngFor="let f of existingFiles; let i = index">
+            <div class="preview-wrapper">
+              <ngx-dropzone-preview
+                [file]="{ name: f.edo_nomfil, type: f.tipo, size: 0 }"
+                [removable]="false"
+                (click)="verArchivoExisting(f)"
                 style="cursor: pointer;"
               >
-                <svg>
-                  <line x1="0" y1="0" x2="10" y2="10"></line>
-                  <line x1="0" y1="10" x2="10" y2="0"></line>
-                </svg>
-              </ngx-dropzone-remove-badge>
+                <ngx-dropzone-label>
+                  <div class="dz-file">
+                    <ng-template [ngIf]="f.tipo && f.tipo.startsWith('image/')">
+                      <i class="ri-image-2-line dz-icon"></i>
+                    </ng-template>
+                    <ng-template [ngIf]="!f.tipo || !f.tipo.startsWith('image/')">
+                      <i class="ri-file-pdf-line dz-icon" *ngIf="f.tipo==='application/pdf'"></i>
+                      <i class="ri-file-2-line dz-icon" *ngIf="f.tipo!=='application/pdf'"></i>
+                    </ng-template>
+                    <div class="dz-text">
+                      <div class="dz-name">{{ f.edo_numdoc }}</div>
+                      <div class="dz-meta">{{ getFileSize(f.edo_tamfil) }}</div>
+                      <div class="dz-meta">Existente</div>
+                    </div>
+                  </div>
+                </ngx-dropzone-label>
+              </ngx-dropzone-preview>
 
-              <ngx-dropzone-remove-badge
-                *ngIf="f.chk_botanu !== 1"
-                style="opacity: 0.4; cursor: not-allowed;"
+              <!-- ✅ Botones superpuestos (fuera del shadow DOM) -->
+              <button
+                *ngIf="f.chk_botanu == 1"
+                class="file-remove-btn visible"
+                title="Eliminar archivo"
+                (click)="onRemoveExisting(f); $event.stopPropagation();">
+                <i class="ri-close-line"></i>
+              </button>
+
+              <button
+                *ngIf="f.chk_botanu != 1"
+                class="file-remove-btn disabled visible"
                 title="Sin permiso para eliminar"
-              >
-                <svg>
-                  <line x1="0" y1="0" x2="10" y2="10"></line>
-                  <line x1="0" y1="10" x2="10" y2="0"></line>
-                </svg>
-              </ngx-dropzone-remove-badge>
-            </ngx-dropzone-preview>
+                disabled>
+                <i class="ri-lock-line"></i>
+              </button>
+            </div>
           </ng-container>
+
+
           <ngx-dropzone-preview style="cursor: pointer;" *ngIf="totalFiles < MAX_FILES && !uploading" (click)="onAddClick($event, dz)">
             <ngx-dropzone-label>
               <div class="dz-file">
@@ -142,7 +141,7 @@
     </ng-container>
   </div>
   <button class="btn btn-secondary" (click)="cerrar()" [disabled]="uploading">Cerrar</button>
-  <button class="btn btn-primary" (click)="guardar()" [disabled]="uploading || files.length === 0">Guardar</button>
+  <button class="btn btn-primary" (click)="guardar()" [disabled]="uploading || (!files.length && !pendingDeletes.length)">Guardar</button>
 </div>
 
   <!-- Preview Template -->

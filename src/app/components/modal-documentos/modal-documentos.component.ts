@@ -1,4 +1,4 @@
-import { Component, Input, OnInit, Output, EventEmitter, TemplateRef, ViewChild } from '@angular/core';
+import { Component, Input, OnInit, Output, EventEmitter, TemplateRef, ViewChild, ViewEncapsulation } from '@angular/core';
 import { BsModalRef } from 'ngx-bootstrap/modal';
 import { ApiService } from 'src/app/services/api.service';
 import Swal from 'sweetalert2';
@@ -16,17 +16,27 @@ interface ExistingFile {
   edo_observ: string | null;
   edo_activo: number;
   tipo?: string;
+  edo_url?: string;
+  chk_botanu?: number;
+  chk_botver?: number;
 }
 
 @Component({
   selector: 'app-modal-documentos',
   templateUrl: './modal-documentos.component.html',
-  styleUrls: ['./modal-documentos.component.css']
+  styleUrls: ['./modal-documentos.component.css'],
+  encapsulation: ViewEncapsulation.None,
 })
 export class ModalDocumentosComponent implements OnInit {
   @Input() entrega: any;
   @Input() permisos: any[] = [];
   @Output() onClose = new EventEmitter<void>();
+
+  ObjetoMenu: any[] = [];
+  objActual: any = null;
+  objId: number = 0;
+  permisosDoc: any[] = [];
+  pendingDeletes: ExistingFile[] = [];
 
   // Campos bloqueados
   entregable: string = '';
@@ -61,6 +71,9 @@ export class ModalDocumentosComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
+    this.getObjetoMenu();
+    this.obtenerPermisosDocumentos();
+
     if (this.entrega) {
       this.entregable = this.entrega.eor_descri || '';
       this.fechaEntrega = this.entrega.ent_fecent || '';
@@ -68,24 +81,62 @@ export class ModalDocumentosComponent implements OnInit {
         ? this.entrega.tbc_descri
         : 'SIN RESPUESTA';
     }
+
     this.loadExistingFiles();
   }
 
-  // Cargar archivos existentes
+  getObjetoMenu(): void {
+    const ObjetoMenu = localStorage.getItem('objetosMenu');
+    this.ObjetoMenu = ObjetoMenu ? JSON.parse(ObjetoMenu) : [];
+  }
+
+  obtenerPermisosDocumentos(): void {
+    const match = this.ObjetoMenu.find((item) => Number(item.obj_id) === 24);
+
+    if (match && match.jsn_permis) {
+      try {
+        const parsed = typeof match.jsn_permis === 'string'
+          ? JSON.parse(match.jsn_permis)
+          : match.jsn_permis;
+        this.permisosDoc = Array.isArray(parsed) ? parsed : [];
+        console.log('✅ Permisos DOCUMENTOS:', this.permisosDoc);
+      } catch (e) {
+        console.error('Error al parsear jsn_permis:', e);
+        this.permisosDoc = [];
+      }
+    } else {
+      console.warn('⚠️ No se encontró el objeto DOCUMENTOS (obj_id=24) en objetosMenu');
+    }
+  }
+
+  obtenerObjId(): void {
+    const match = this.ObjetoMenu.find(item => item.obj_enlace === 'reporte-adquisicion');
+    if (match) {
+      this.objActual = match;
+      this.objId = match.obj_id;
+      console.log('📦 Objeto actual encontrado:', this.objId, match);
+    } else {
+      console.warn('⚠️ No se encontró el objeto DOCUMENTOS (reporte-adquisicion) en objetosMenu');
+    }
+  }
+
   loadExistingFiles() {
     const payload = {
       p_edo_id: 0,
       p_ent_id: this.entrega ? this.entrega.ent_id : 0,
       p_etd_id: 0,
       p_usu_id: Number(localStorage.getItem('usuario') || 0),
-      p_ent_permis: this.permisos || [],
+      p_ent_permis: this.permisosDoc || [],
       p_edo_activo: 1
     };
 
     this.api.getentregadocumentoslis(payload).subscribe({
       next: (data: any[]) => {
+        
         this.existingFiles = data.map((d: any) => ({
           ...d,
+          chk_botanu: Number(d.chk_botanu),
+          chk_botver: Number(d.chk_botver),
           tipo: (d.edo_nomfil || '').toLowerCase().endsWith('.pdf')
             ? 'application/pdf'
             : 'image/*',
@@ -103,8 +154,7 @@ export class ModalDocumentosComponent implements OnInit {
       }
     });
   }
-
-
+  
   // Archivos nuevos desde Dropzone
   get totalFiles(): number {
     const existingCount = (this.existingFiles && this.existingFiles.length) ? this.existingFiles.length : 0;
@@ -188,31 +238,21 @@ export class ModalDocumentosComponent implements OnInit {
     }
 
     Swal.fire({
-      title: 'Confirmar',
-      text: `¿Desea eliminar ${f.edo_nomfil}?`,
+      title: '¿Quitar archivo?',
+      text: `${f.edo_numdoc || f.edo_nomfil} (se eliminará al guardar los cambios)`,
       icon: 'warning',
       showCancelButton: true,
-      confirmButtonText: 'Sí, eliminar',
+      confirmButtonText: 'Sí, quitar',
       cancelButtonText: 'Cancelar'
-    }).then(async res => {
+    }).then(res => {
       if (res.isConfirmed) {
-        try {
-          const payload = {
-            p_edo_id: f.edo_id,
-            p_edo_usureg: Number(localStorage.getItem('usuario') || 0)
-          };
-          const r: any = await this.api.getentregadocumentosanu(payload).toPromise();
-          const rr = Array.isArray(r) ? r[0] : r;
-          if (rr && rr.error === 0) {
-            this.existingFiles = this.existingFiles.filter(x => x !== f);
-            Swal.fire('Eliminado', 'Archivo eliminado.', 'success');
-          } else {
-            Swal.fire('Error', (rr && rr.mensa) ? rr.mensa : 'No se pudo eliminar.', 'error');
-          }
-        } catch (err) {
-          console.error('Error al eliminar documento:', err);
-          Swal.fire('Error', 'No se pudo eliminar el documento.', 'error');
-        }
+        // 🔸 Quitamos visualmente de la lista
+        this.existingFiles = this.existingFiles.filter(x => x.edo_id !== f.edo_id);
+
+        // 🔸 Lo agregamos a los pendientes de anulación
+        this.pendingDeletes.push(f);
+
+        Swal.fire('Marcado para eliminar', `${f.edo_numdoc || f.edo_nomfil} será eliminado al guardar.`, 'info');
       }
     });
   }
@@ -401,17 +441,76 @@ export class ModalDocumentosComponent implements OnInit {
     if (this.dz && this.dz.showFileSelector) this.dz.showFileSelector();
   }
 
+  get canSave(): boolean {
+    return !this.uploading && (this.files.length > 0 || this.pendingDeletes.length > 0);
+  }
+
+  private async eliminarPendientes() {
+    if (!this.pendingDeletes.length) return;
+
+    for (const f of this.pendingDeletes) {
+      const payload = {
+        p_edo_id: f.edo_id,
+        p_edo_usureg: Number(localStorage.getItem('usuario') || 0)
+      };
+
+      try {
+        const res: any = await this.api.getentregadocumentosanu(payload).toPromise();
+        const result = Array.isArray(res) ? res[0] : res;
+
+        if (result && result.error === 0) {
+          console.log('✅ Documento anulado: ' + f.edo_nomfil);
+        } else {
+          console.warn('⚠️ No se pudo anular ' + f.edo_nomfil, (result && result.mensa) ? result.mensa : '');
+        }
+      } catch (err) {
+        console.error('❌ Error al anular ' + f.edo_nomfil, err);
+      }
+    }
+    this.pendingDeletes = [];
+  }
+
   guardar() {
     if (!this.entrega || !this.entrega.ent_id) {
       Swal.fire('Error', 'No se ha identificado la entrega.', 'error');
       return;
     }
 
-    if (!this.files.length) {
-      Swal.fire('Info', 'No hay archivos nuevos para subir.', 'info');
+    // 🟢 CASO 1: solo hay archivos para eliminar (sin nuevos)
+    if (this.files.length === 0 && this.pendingDeletes.length > 0) {
+      Swal.fire({
+        title: 'Confirmar cambios',
+        text: `Se eliminarán ${this.pendingDeletes.length} archivo(s) existente(s). ¿Desea continuar?`,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonText: 'Sí, eliminar',
+        cancelButtonText: 'Cancelar'
+      }).then((res) => {
+        if (res.isConfirmed) {
+          this.uploading = true;
+          this.eliminarPendientes()
+            .then(() => {
+              this.uploading = false;
+              Swal.fire('Éxito', 'Cambios aplicados correctamente.', 'success');
+              this.loadExistingFiles();
+            })
+            .catch((err) => {
+              console.error('Error en eliminación:', err);
+              this.uploading = false;
+              Swal.fire('Error', 'Ocurrió un error al eliminar los archivos.', 'error');
+            });
+        }
+      });
       return;
     }
 
+    // 🔴 CASO 2: ni archivos nuevos ni eliminaciones → mensaje informativo
+    if (this.files.length === 0 && this.pendingDeletes.length === 0) {
+      Swal.fire('Info', 'No hay cambios para guardar.', 'info');
+      return;
+    }
+
+    // 🟢 CASO 3: subida de nuevos archivos (puede incluir eliminaciones)
     const form = new FormData();
     form.append('p_ent_id', String(this.entrega.ent_id));
     form.append('p_usu_id', String(Number(localStorage.getItem('usuario') || 0)));
@@ -420,7 +519,7 @@ export class ModalDocumentosComponent implements OnInit {
     this.uploading = true;
     this.uploadProgress = 0;
 
-    this.api.postEntregadocumentosGraWithProgress(form).subscribe({
+    this.api.getentregadocumentosgra(form).subscribe({
       next: (evt: any) => {
         const type = (evt && evt.type) ? evt.type : null;
         if (type === 1 && evt.total) {
@@ -431,10 +530,16 @@ export class ModalDocumentosComponent implements OnInit {
           this.uploadProgress = 100;
           const res = evt.body;
           const r = Array.isArray(res) ? res[0] : res;
+
           if (r && r.error === 0) {
             Swal.fire('Éxito', r.mensa || 'Archivos subidos correctamente', 'success');
+
+            // 🧩 Si hay archivos pendientes de eliminar → ejecutarlos
+            this.eliminarPendientes()
+              .then(() => this.loadExistingFiles());
+
+            // 🔄 Limpieza de la cola
             this.files = [];
-            this.loadExistingFiles();
           } else {
             Swal.fire('Error', (r && r.mensa) ? r.mensa : 'Error al subir archivos', 'error');
           }
@@ -448,6 +553,7 @@ export class ModalDocumentosComponent implements OnInit {
       }
     });
   }
+
 
   cerrar() {
     this.modalRef.hide();

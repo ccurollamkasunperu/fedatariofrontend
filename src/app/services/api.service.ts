@@ -212,6 +212,13 @@ export class ApiService {
       })
     );
   }
+  getentregadocumentosgra(data: object) {
+    return this.postQuery('adquisicion/entregadocumentosgra', data).pipe(
+      map((data) => {
+        return data;
+      })
+    );
+  }
 
   postFile(path: string, formData: FormData) {
     const url = `${this.urlApi + path}`;
