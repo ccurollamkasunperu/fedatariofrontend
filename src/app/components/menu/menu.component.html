@@ -1,9 +1,9 @@
-<!-- menu.component.html -->
+
 <div class="app-menu navbar-menu">
   <div class="navbar-brand-box">
     <a routerLink="/" class="logo logo-dark">
       <span class="logo-sm mt-5">
-        <!-- <img src="/src/assets/images/logo-sm.png" alt="" height="60" class="imgLogoSmp" /> -->
+        
       </span>
       <span class="logo-lg mt-5">
         <img src="assets/images/logo-short.png" alt="Logo" style="height:120px;" />
@@ -11,10 +11,10 @@
     </a>
     <a routerLink="/" class="logo logo-light">
       <span class="logo-sm">
-        <!-- <img src="../../../assets/images/logo-mpl-black.png" alt="" height="26" /> -->
+        
       </span>
       <span class="logo-lg">
-        <!-- <img src="../../../assets/images/logo-mpl-black.png" alt="" height="26" /> -->
+        
       </span>
     </a>
     <button
@@ -32,7 +32,7 @@
       <ul class="navbar-nav" id="navbar-nav">
         <li class="menu-title"><span data-key="t-menu">Menu</span></li>
 
-        <!-- Render de raíces -->
+        
         <ng-container *ngFor="let node of menuTree; trackBy: trackById">
           <ng-container
             [ngTemplateOutlet]="renderNode"
@@ -46,11 +46,11 @@
   <div class="sidebar-background"></div>
 </div>
 
-<!-- Template recursivo -->
+
 <ng-template #renderNode let-node="node" let-level="level" let-parentPath="parentPath">
   <li class="nav-item" [ngClass]="{ 'has-children': node.children && node.children.length }">
 
-    <!-- PADRE: abre/cierra con Bootstrap collapse -->
+    
     <a *ngIf="node.children && node.children.length; else leafLink"
       class="nav-link menu-link d-flex align-items-center"
       href="{{ '#c' + node.id }}"
@@ -63,7 +63,7 @@
       <span class="ms-2 flex-grow-1">{{ node.label }}</span>
     </a>
 
-    <!-- HOJA: navega con Angular -->
+    
     <ng-template #leafLink>
       <a class="nav-link menu-link d-flex align-items-center"
         [routerLink]="['/', normalizeLink(node.enlace)]"
@@ -74,7 +74,7 @@
       </a>
     </ng-template>
 
-    <!-- SUBMENÚ: Bootstrap gestionará show/hidden; forzamos 'show' si hay ruta activa -->
+    
     <div *ngIf="node.children && node.children.length"
         class="collapse menu-dropdown"
         [id]="'c' + node.id"

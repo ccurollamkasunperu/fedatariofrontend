@@ -12,13 +12,11 @@ import { analyzeAndValidateNgModules } from "@angular/compiler";
 import swal from "sweetalert2";
 import { error } from "util";
 import { ModalConformidadComponent } from "src/app/components/modal-conformidad/modal-conformidad.component";
-
 interface PermisoBtn {
   bot_id: number;
   bot_descri: string;
   pus_activo: number | string;
 }
-
 @Component({
   selector: 'app-orden-entrega',
   templateUrl: './orden-entrega.component.html',
@@ -43,14 +41,11 @@ export class OrdenEntregaComponent implements OnInit {
     jsn_permis: any[] = [];
     ruta: string = '';
     objid : number = 0 ;
-  
-    //INICIO PARAMETROS
     dataAreaDenominacion:any;
     dataTipoBien:any;
     dataEstadoOrden:any;
     dataEstadoSiaf:any;
     dataOrdenEntrega:any;
-
     dataOrden:any;
     dataEntrega:any;
     dataEstado:any;
@@ -59,7 +54,6 @@ export class OrdenEntregaComponent implements OnInit {
     dataTipoBienControl:any;
     entregaEdit:any = {};
     modalMode: string = 'editar';
-  
     est_id: string = '0';
     tea_id: string = '0';
     pri_id: string = '0';
@@ -67,7 +61,6 @@ export class OrdenEntregaComponent implements OnInit {
     age_id: string = '';
     ori_id: string = '';
     sed_id: string = '';
-  
     ord_id:string='0';
     ord_numero:string='';
     ord_numruc:string='';
@@ -79,18 +72,13 @@ export class OrdenEntregaComponent implements OnInit {
     ord_fecfin:string='';
     usu_id:string='';
     ord_permis:string='';
-    //FIN DE PARAMETROS
-
     @ViewChild(DataTableDirective, { static: false })
     dtElement: DataTableDirective;
     isDtInitialized: boolean = false;
-
     @ViewChild('EditEntregaModal', { static: false })
     EditEntregaModal: TemplateRef<any>;
-  
     rowSelected : any;
     dataanteriorseleccionada : any;
-    
     dtTrigger: Subject<any> = new Subject<any>();
     dtOptions: any = {
       destroy: false,
@@ -136,7 +124,6 @@ export class OrdenEntregaComponent implements OnInit {
           } else {
             this.dataanteriorseleccionada = [];
           }
-  
           const anular = document.getElementById('anular') as HTMLButtonElement | null;
           if (anular) {
             anular.disabled = false;
@@ -173,7 +160,6 @@ export class OrdenEntregaComponent implements OnInit {
         },
       },
     };
-    
     constructor(
       private router: Router,
       private route: ActivatedRoute,
@@ -184,14 +170,12 @@ export class OrdenEntregaComponent implements OnInit {
       private location: Location
     ) {
     }
-  
     ngOnInit(): void {
       this.SetMesIniFin();
       this.usu_id = localStorage.getItem('usuario');
       const idParam = this.route.snapshot.paramMap.get('id');
       this.getObjetoMenu();
       this.ObtenerObjId();
-
       if (idParam) {
         if (/^[0-9]+$/.test(idParam)) {
           this.ord_id = idParam;
@@ -205,7 +189,6 @@ export class OrdenEntregaComponent implements OnInit {
               console.warn('No se pudo descifrar id, se usará tal cual:', err);
               this.ord_id = idParam;
             }
-
             const ordIdNum = Number(this.ord_id);
             if (Number.isInteger(ordIdNum) && ordIdNum !== 0) {
               this.loadordensel();
@@ -221,23 +204,18 @@ export class OrdenEntregaComponent implements OnInit {
       }
       const onMobile = this.isXs();
     }
-  
     ngOnDestroy(): void {
       this.dtTrigger.unsubscribe();
     }
-  
     descargaExcel() {
       let btnExcel = document.querySelector('#tablaDataProceso .dt-buttons .dt-button.buttons-excel.buttons-html5') as HTMLButtonElement;
       btnExcel.click();
     }
-  
     @HostListener('window:resize') onResize() { this.adjustDt(); }
-  
     ngAfterViewInit() {
       this.dtTrigger.next();
       setTimeout(() => this.adjustDt(), 0);
     }
-  
     private adjustDt() {
       if (!this.dtElement) return;
       this.dtElement.dtInstance.then((dt: any) => {
@@ -245,27 +223,22 @@ export class OrdenEntregaComponent implements OnInit {
         if (dt.responsive.recalc) dt.responsive.recalc();
       });
     }
-  
     CerrarModalProceso() {
       this.loadDataProceso();
       if (this.modalRef) {
         this.modalRef.hide();
       }
     }
-    
     loadordensel() {
       const data_post = {
         p_ord_id: (this.ord_id == null || this.ord_id === '') ? 0 : parseInt(this.ord_id)
       };
-
       this.api.getordensel(data_post).subscribe((data: any) => {
         this.dataOrden = data[0];
       });
     }
-    
     loadDataProceso() {
       this.loading = true;
-  
       const data_post = {
         p_ent_id: 0,
         p_ord_id: (this.ord_id == null || this.ord_id === '') ? 0 : parseInt(this.ord_id),
@@ -277,7 +250,6 @@ export class OrdenEntregaComponent implements OnInit {
         p_ent_permis: this.jsn_permis,
         p_ent_activo: 1
       };
-  
       this.api.getentregalis(data_post).subscribe({
         next: (data: any[]) => {
           if (Array.isArray(data) && data.length > 0) {
@@ -306,65 +278,49 @@ export class OrdenEntregaComponent implements OnInit {
         }
       });
     }
-  
     ObtenerObjId() {
       this.ruta = this.router.url.replace(/^\/+/, '');
       const partes = this.router.url.split('/');
       const rutaBase = (partes.length > 0 ? partes[0].replace(/^\/+/, '').trim() : '') || (partes.length > 1 ? partes[1].trim() : '');
       const match = this.ObjetoMenu.find(item => item.obj_enlace === rutaBase);
-
       if (match) {
         this.objid = match.obj_id;
         this.jsn_permis = match.jsn_permis;
-
         let permisos: PermisoBtn[] = [];
         const raw = match.jsn_permis;
-
         try {
           const parsed = (typeof raw === 'string') ? JSON.parse(raw) : raw;
           permisos = Array.isArray(parsed) ? parsed : [];
         } catch {
           permisos = [];
         }
-
         const ids = permisos
           .filter(p => Number(p.pus_activo) === 1)
           .map(p => Number(p.bot_id));
-
         this.permSet = new Set<number>(ids);
-
         this.btnPerm.nuevo = this.permSet.has(1);
         this.btnPerm.excel = this.permSet.has(5);
-        
       } else {
         console.warn('⚠️ No se encontró coincidencia para la ruta:', rutaBase);
       }
     }
-  
     private resetPermFlags() {
       Object.keys(this.btnPerm).forEach(k => (this.btnPerm as any)[k] = false);
     }
-
     hasPerm(botId: number): boolean {
       return this.permSet.has(botId);
     }
-  
     getObjetoMenu() {
       const ObjetoMenu = localStorage.getItem('objetosMenu');
       this.ObjetoMenu = ObjetoMenu ? JSON.parse(ObjetoMenu) : [];
     }
-  
-    //FUNCIONES
     SetMesIniFin(){
       const today = new Date();
-  
       const yyyy = today.getFullYear();
       const mm = (today.getMonth() + 1).toString().padStart(2, '0');
       const dd = today.getDate().toString().padStart(2, '0');
-  
       this.ord_fecfin = `${yyyy}-${mm}-${dd}`;
     }
-    
     restrictNumeric(e) {
       let input;
       if (e.metaKey || e.ctrlKey) {
@@ -382,8 +338,6 @@ export class OrdenEntregaComponent implements OnInit {
       input = String.fromCharCode(e.which);
       return !!/[\d\s]/.test(input);
     }
-  
-    //PARSE BUTTONS ARRAY 
     safeParse(jsonStr: string): any[] {
       try {
         return JSON.parse(jsonStr || '[]');
@@ -392,10 +346,8 @@ export class OrdenEntregaComponent implements OnInit {
         return [];
       }
     }
-  
     getIdButton(bot_id: number, item: any) {
       this.selectedTicket = item;
-  
       switch (bot_id) {
         case 4:
           this.openViewModal(item);
@@ -434,7 +386,6 @@ export class OrdenEntregaComponent implements OnInit {
           break;
       }
     }
-
     openEditModal(item: any) {
       this.modalMode = 'editar';
       this.entregaEdit = { ...item };
@@ -443,7 +394,6 @@ export class OrdenEntregaComponent implements OnInit {
         class: 'modal-lg modal-dialog-centered' 
       });
     }
-
     openViewModal(item: any) {
       this.modalMode = 'ver';
       this.entregaEdit = { ...item };
@@ -451,18 +401,15 @@ export class OrdenEntregaComponent implements OnInit {
         class: 'modal-lg modal-dialog-centered' 
       });
     }
-
     loadControles() {
       const data_post = {
         p_tbc_id: 0,
         p_tib_id: this.entregaEdit.tib_id ? parseInt(this.entregaEdit.tib_id) : 0
       };
-
       this.api.gettipobiencontrolsel(data_post).subscribe((data: any) => {
         this.dataTipoBienControl = data;
       });
     }
-
     grabarEntrega() {
       if (!this.entregaEdit.ent_fecent || !this.entregaEdit.ent_fecrec) {
         swal.fire({
@@ -474,7 +421,6 @@ export class OrdenEntregaComponent implements OnInit {
         });
         return;
       }
-
       const dataPost = {
         p_ent_id: this.entregaEdit.ent_id ? parseInt(this.entregaEdit.ent_id) : 0,
         p_ord_id: this.entregaEdit.ord_id ? parseInt(this.entregaEdit.ord_id) : 0,
@@ -485,7 +431,6 @@ export class OrdenEntregaComponent implements OnInit {
         p_ent_observ: this.entregaEdit.ent_observ || '',
         p_ent_usureg: parseInt(localStorage.getItem('usuario') || '0')
       };
-
       swal.fire({
         title: 'Mensaje',
         html: '¿Seguro de guardar los cambios?',

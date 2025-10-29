@@ -11,51 +11,40 @@ import { ModalEditarOrdenComponent } from 'src/app/components/modal-editar-orden
 import { ModalDocumentosComponent } from 'src/app/components/modal-documentos/modal-documentos.component';
 import swal from "sweetalert2";
 import * as XLSX from 'xlsx';
-
 interface PermisoBtn {
   bot_id: number;
   bot_descri: string;
   pus_activo: number | string;
 }
-
 @Component({
   selector: 'app-ordenes',
   templateUrl: './ordenes.component.html',
   styleUrls: ['./ordenes.component.css']
 })
 export class OrdenesComponent implements OnInit {
-  
   private isXs(): boolean { return window.innerWidth < 768; }
-
   private permSet = new Set<number>();
-
   btnPerm = {
     nuevo: false,
     excel: false,
   };
-
   titulopant : string = "Adquisiciones";
   icono : string = "pe-7s-next-2";
   loading: boolean = false;
   exportarHabilitado: boolean = false;
   modalRef?: BsModalRef;
   selectedTicket: any;
-
   btnnuevo:boolean=false;
   btnexcel:boolean=false;
-
   ObjetoMenu: any[] = [];
   jsn_permis: any[] = [];
   ruta: string = '';
   objid : number = 0 ;
-
-  //INICIO PARAMETROS
   dataAreaDenominacion:any;
   dataTipoBien:any;
   dataEstadoOrden:any;
   dataEstadoSiaf:any;
   dataOrden:any;
-
   ord_id:string='0';
   ord_numero:string='';
   ord_numruc:string='';
@@ -67,8 +56,6 @@ export class OrdenesComponent implements OnInit {
   ord_fecfin:string='';
   usu_id:string='';
   ord_permis:string='';
-  //FIN DE PARAMETROS
-
   @ViewChild('OpenModalEditarTicket', { static: false }) OpenModalEditarTicket!: TemplateRef<any>;
   @ViewChild('OpenModalAnularTicket', { static: false }) OpenModalAnularTicket!: TemplateRef<any>;
   @ViewChild('OpenModalVerTicket', { static: false }) OpenModalVerTicket!: TemplateRef<any>;
@@ -80,21 +67,16 @@ export class OrdenesComponent implements OnInit {
   @ViewChild('OpenModalTrazabilidadTicket', { static: false }) OpenModalTrazabilidadTicket!: TemplateRef<any>;
   @ViewChild('OpenModalDerivarTicket', { static: false }) OpenModalDerivarTicket!: TemplateRef<any>;
   @ViewChild('ImportFileModal', { static: false }) ImportFileModal!: TemplateRef<any>;
-
-  // Import file modal props
   fileToUpload: File | null = null;
   selectedFileName: string = '';
   uploading: boolean = false;
   uploadResult: string = '';
   uploadSuccess: boolean = false;
-
   @ViewChild(DataTableDirective, { static: false })
   dtElement: DataTableDirective;
   isDtInitialized: boolean = false;
-
   rowSelected : any;
   dataanteriorseleccionada : any;
-  
   dtTrigger: Subject<any> = new Subject<any>();
   dtOptions: any = {
     destroy: false,
@@ -140,7 +122,6 @@ export class OrdenesComponent implements OnInit {
         } else {
           this.dataanteriorseleccionada = [];
         }
-
         const anular = document.getElementById('anular') as HTMLButtonElement | null;
         if (anular) {
           anular.disabled = false;
@@ -177,7 +158,6 @@ export class OrdenesComponent implements OnInit {
       },
     },
   };
-  
   constructor(
     private router: Router,
     private modalService: BsModalService,
@@ -186,7 +166,6 @@ export class OrdenesComponent implements OnInit {
     private crypto: CryptoService
   ) {
   }
-
   ngOnInit(): void {
     this.SetMesIniFin();
     this.usu_id = localStorage.getItem('usuario');
@@ -198,27 +177,20 @@ export class OrdenesComponent implements OnInit {
     this.getObjetoMenu();
     this.ObtenerObjId();
     console.log(this.ObjetoMenu[0]);
-    
     const onMobile = this.isXs();
-
   }
-
   ngOnDestroy(): void {
     this.dtTrigger.unsubscribe();
   }
-
   descargaExcel() {
     let btnExcel = document.querySelector('#tablaDataProceso .dt-buttons .dt-button.buttons-excel.buttons-html5') as HTMLButtonElement;
     btnExcel.click();
   }
-
   @HostListener('window:resize') onResize() { this.adjustDt(); }
-
   ngAfterViewInit() {
     this.dtTrigger.next();
     setTimeout(() => this.adjustDt(), 0);
   }
-
   private adjustDt() {
     if (!this.dtElement) return;
     this.dtElement.dtInstance.then((dt: any) => {
@@ -226,17 +198,14 @@ export class OrdenesComponent implements OnInit {
       if (dt.responsive.recalc) dt.responsive.recalc();
     });
   }
-
   CerrarModalProceso() {
     this.loadDataProceso();
     if (this.modalRef) {
       this.modalRef.hide();
     }
   }
-
   loadDataProceso() {
     this.loading = true;
-
     const data_post = {
       p_ord_id: (this.ord_id == null || this.ord_id === '') ? 0 : parseInt(this.ord_id),
       p_ord_numero: (this.ord_numero == null || this.ord_numero === '') ? 0 : parseInt(this.ord_numero),
@@ -250,7 +219,6 @@ export class OrdenesComponent implements OnInit {
       p_usu_id: parseInt(this.usu_id) || 0,
       p_ord_permis: this.jsn_permis
     };
-
     this.api.getordenlis(data_post).subscribe({
       next: (data: any[]) => {
         if (Array.isArray(data) && data.length > 0) {
@@ -266,7 +234,6 @@ export class OrdenesComponent implements OnInit {
               this.loading = false;
             }, 350);
           });
-
         } else {
           this.dataOrden = [];
           this.exportarHabilitado = false;
@@ -287,74 +254,53 @@ export class OrdenesComponent implements OnInit {
       }
     });
   }
-
   ObtenerObjId(){
     this.ruta = this.router.url.replace(/^\/+/, '');
     console.log('Ruta actual:', this.ruta);
-
     const match = this.ObjetoMenu.find(item => item.obj_enlace === this.ruta);
     console.log('Objeto de menú coincidente:', match);
     if (match) {
       this.objid = match.obj_id;
       this.jsn_permis = match.jsn_permis;
-
       let permisos: PermisoBtn[] = [];
       const raw = match.jsn_permis;
-  
       try {
         const parsed = (typeof raw === 'string') ? JSON.parse(raw) : raw;
         permisos = Array.isArray(parsed) ? parsed : [];
       } catch {
         permisos = [];
       }
-
       const ids = permisos.filter(p => Number(p.pus_activo) === 1).map(p => Number(p.bot_id));
-      
       this.permSet = new Set<number>(ids);
-
       this.btnPerm.nuevo = this.permSet.has(1);
       this.btnPerm.excel = this.permSet.has(5);
-      
       console.log('Permisos activos:', [...this.permSet]);
     } else {
       console.log('Ruta no encontrada en objetosMenu');
     }
   }
-
   private resetPermFlags() {
     Object.keys(this.btnPerm).forEach(k => (this.btnPerm as any)[k] = false);
   }
-
-  // Helper opcional (por si quieres consultar en línea)
   hasPerm(botId: number): boolean {
     return this.permSet.has(botId);
   }
-
   getObjetoMenu() {
     const ObjetoMenu = localStorage.getItem('objetosMenu');
     this.ObjetoMenu = ObjetoMenu ? JSON.parse(ObjetoMenu) : [];
   }
-
-  //FUNCIONES
   SetMesIniFin(){
     const today = new Date();
-
     const yyyy = today.getFullYear();
     const mm = (today.getMonth() + 1).toString().padStart(2, '0');
     const dd = today.getDate().toString().padStart(2, '0');
-
     this.ord_fecini = `${yyyy}-${mm}-01`;
     this.ord_fecfin = `${yyyy}-${mm}-${dd}`;
   }
-
   TicketIns() {
-    //this.router.navigate(['/nuevo-ticket']);
   }
-  
   TicketEdit(tkt_id: string) {
-    //this.router.navigate(['/editar-ticket',tkt_id]); 
   }
-
   restrictNumeric(e) {
     let input;
     if (e.metaKey || e.ctrlKey) {
@@ -372,18 +318,15 @@ export class OrdenesComponent implements OnInit {
     input = String.fromCharCode(e.which);
     return !!/[\d\s]/.test(input);
   }
-
   loadTipoBien() {
     const data_post = {
       p_tib_id: 0,
       p_tib_activo: 1
     };
-
     this.api.gettipobiensel(data_post).subscribe((data: any) => {
       this.dataTipoBien = data;
     });
   }
-  
   loadAreaDenominacion() {
     const data_post = {
       p_ard_id: 0,
@@ -392,35 +335,28 @@ export class OrdenesComponent implements OnInit {
       p_atd_id: 0,
       p_ard_activo: 1
     };
-
     this.api.getareadenominacionsel(data_post).subscribe((data: any) => {
       this.dataAreaDenominacion = data;
     });
   }
-  
   loadEstadoOrden() {
     const data_post = {
       p_eso_id: 0,
       p_eso_activo: 1
     };
-
     this.api.getestadoordensel(data_post).subscribe((data: any) => {
       this.dataEstadoOrden = data;
     });
   }
-  
   loadEstadoSiaf() {
     const data_post = {
       p_ess_id: 0,
       p_ess_activo: 1
     };
-
     this.api.getestadosiafsel(data_post).subscribe((data: any) => {
       this.dataEstadoSiaf = data;
     });
   }
-
-  //PARSE BUTTONS ARRAY 
   safeParse(jsonStr: string): any[] {
     try {
       return JSON.parse(jsonStr || '[]');
@@ -429,11 +365,9 @@ export class OrdenesComponent implements OnInit {
       return [];
     }
   }
-
   getIdButton(bot_id: number, item: any) {
     console.log('Botón presionado:', bot_id, 'para ticket:', item.ord_id);
     this.selectedTicket = item;
-
     switch (bot_id) {
       case 1:
         this.modalRef = this.modalService.show(ModalEditarOrdenComponent, {
@@ -508,7 +442,6 @@ export class OrdenesComponent implements OnInit {
         break;
     }
   }
-
   openImportModal() {
     this.selectedFileName = '';
     this.fileToUpload = null;
@@ -518,7 +451,6 @@ export class OrdenesComponent implements OnInit {
       this.modalRef = this.modalService.show(this.ImportFileModal, { class: 'modal-md modal-dialog-centered' });
     }
   }
-
   onFileSelected(event: any) {
     const file: File = event.target.files && event.target.files.length > 0 ? event.target.files[0] : null;
     if (file) {
@@ -530,26 +462,20 @@ export class OrdenesComponent implements OnInit {
       this.selectedFileName = '';
     }
   }
-
   uploadFile() {
     if (!this.fileToUpload) {
       swal.fire('Advertencia', 'Seleccione un archivo Excel antes de subir.', 'warning');
       return;
     }
-
     const file = this.fileToUpload;
     const fileName = file.name.toLowerCase();
-
     if (!fileName.endsWith('.xls') && !fileName.endsWith('.xlsx')) {
       swal.fire('Error', 'Solo se permiten archivos Excel (.xls o .xlsx).', 'error');
       return;
     }
-
     this.uploading = true;
     this.uploadResult = '';
-
     const reader = new FileReader();
-
     reader.onload = (e: any) => {
       try {
         const data = new Uint8Array(e.target.result);
@@ -557,7 +483,6 @@ export class OrdenesComponent implements OnInit {
         const sheetName = workbook.SheetNames[0];
         const sheet = workbook.Sheets[sheetName];
         const rawData: any[] = XLSX.utils.sheet_to_json(sheet, { defval: null });
-
         const requiredHeaders = [
           'fk_id_orden_tipo',
           'in_orden_anno',
@@ -574,7 +499,6 @@ export class OrdenesComponent implements OnInit {
           'estado_orden',
           'estado_siaf'
         ];
-
         const firstRow = rawData[0] ? Object.keys(rawData[0]) : [];
         const missing = requiredHeaders.filter(h => !firstRow.includes(h));
         if (missing.length > 0) {
@@ -582,8 +506,6 @@ export class OrdenesComponent implements OnInit {
           swal.fire('Error en formato', `Faltan las siguientes cabeceras:\n${missing.join(', ')}`, 'error');
           return;
         }
-
-        // ===== RECONSTRUCCIÓN UTF-8 FORZADA =====
         const cleanJson: any[] = [];
         for (const row of rawData) {
           const cleanRow: any = {};
@@ -591,11 +513,8 @@ export class OrdenesComponent implements OnInit {
             let value = row[key];
             if (typeof value === 'string') {
               try {
-                // 1️⃣ eliminar caracteres invisibles
                 value = value.replace(/[\x00-\x1F\x7F-\x9F]/g, ' ');
-                // 2️⃣ normalizar acentos
                 value = value.normalize('NFC');
-                // 3️⃣ reparar secuencias típicas
                 value = value
                   .replace(/Ã¡/g, 'á').replace(/ÃÀ/g, 'Á')
                   .replace(/Ã©/g, 'é').replace(/Ã‰/g, 'É')
@@ -606,7 +525,6 @@ export class OrdenesComponent implements OnInit {
                   .replace(/Ã /g, 'à').replace(/Ã€/g, 'À')
                   .replace(/Ã¨/g, 'è').replace(/ÃÊ/g, 'Ê')
                   .replace(/Â/g, '').replace(/�/g, '');
-                // 4️⃣ fallback universal
                 value = decodeURIComponent(escape(unescape(encodeURIComponent(value))));
               } catch {
                 value = value;
@@ -617,18 +535,15 @@ export class OrdenesComponent implements OnInit {
           }
           cleanJson.push(cleanRow);
         }
-
         const payload = {
           p_imp_nomfil: file.name,
           p_imp_jsdata: JSON.stringify(cleanJson),
           p_imp_usureg: Number(localStorage.getItem('usuario') || 0)
         };
-
         this.api.getordenimp(payload).subscribe({
           next: (res: any) => {
             this.uploading = false;
             this.uploadSuccess = false;
-
             if (Array.isArray(res) && res.length > 0) {
               this.CerrarModalProceso();
               const item = res[0];
@@ -636,7 +551,6 @@ export class OrdenesComponent implements OnInit {
               const mensaje = (item && item.mensa)
                 ? item.mensa.trim()
                 : 'Archivo procesado correctamente.';
-
               if (errorCode === 0) {
                 this.uploadSuccess = true;
                 this.uploadResult = mensaje;
@@ -654,25 +568,20 @@ export class OrdenesComponent implements OnInit {
             console.error('Error subida:', err);
             this.uploading = false;
             this.uploadSuccess = false;
-
             let msg = 'Error al subir el archivo.';
             if (err && err.error && err.error.mensa) {
               msg = err.error.mensa;
             } else if (err && err.message) {
               msg = err.message;
             }
-
             swal.fire('Error', msg, 'error');
           }
         });
-
       } catch (ex) {
         this.uploading = false;
         swal.fire('Error', 'No se pudo leer el archivo Excel.', 'error');
       }
     };
-
     reader.readAsArrayBuffer(file);
   }
-
 }

@@ -2,7 +2,6 @@ import { Component, Input, Output, EventEmitter, OnInit } from '@angular/core';
 import { BsModalRef } from 'ngx-bootstrap/modal';
 import { ApiService } from 'src/app/services/api.service';
 import Swal from 'sweetalert2';
-
 @Component({
   selector: 'app-modal-editar-orden',
   templateUrl: './modal-editar-orden.component.html',
@@ -12,18 +11,14 @@ export class ModalEditarOrdenComponent implements OnInit {
   @Input() orden: any;
   @Input() modo: 'ver' | 'editar' = 'ver';
   @Output() onClose = new EventEmitter<void>();
-
   dataAreas: any[] = [];
   dataEspecialistas: any[] = [];
   cargado = false;
-
   constructor(public modalRef: BsModalRef, private api: ApiService) {}
-
   ngOnInit(): void {
     console.log('Orden recibida:', this.orden);
     this.loadData();
   }
-
   loadData() {
     Promise.all([
       this.api.getareadenominacionsel({
@@ -38,19 +33,16 @@ export class ModalEditarOrdenComponent implements OnInit {
     .then(([areas, especialistas]: any[]) => {
       this.dataAreas = areas || [];
       this.dataEspecialistas = especialistas || [];
-
       if (this.orden) {
         if (this.orden.ard_id) {
           const area = this.dataAreas.find(a => a.ard_id == this.orden.ard_id);
           if (area) this.orden.ard_id = area.ard_id;
         }
-
         if (this.orden.esp_id) {
           const esp = this.dataEspecialistas.find(e => e.esp_id == this.orden.esp_id);
           if (esp) this.orden.esp_id = esp.esp_id;
         }
       }
-
       this.cargado = true;
     })
     .catch(err => {
@@ -58,7 +50,6 @@ export class ModalEditarOrdenComponent implements OnInit {
       this.cargado = true;
     });
   }
-
   soloNumeros(event: KeyboardEvent): boolean {
     const charCode = event.which ? event.which : event.keyCode;
     if (charCode < 48 || charCode > 57) {
@@ -67,7 +58,6 @@ export class ModalEditarOrdenComponent implements OnInit {
     }
     return true;
   }
-
   grabar() {
     if (!this.orden.ard_id || !this.orden.ord_nusiaf) {
       Swal.fire({
@@ -79,7 +69,6 @@ export class ModalEditarOrdenComponent implements OnInit {
       });
       return;
     }
-
     const dataPost = {
       p_ord_id: this.orden.ord_id ? parseInt(this.orden.ord_id) : 0,
       p_ard_id: parseInt(this.orden.ard_id) || 0,
@@ -91,7 +80,6 @@ export class ModalEditarOrdenComponent implements OnInit {
       p_ord_fecrec: this.orden.ord_fecrec || '',
       p_usu_id: parseInt(localStorage.getItem('usuario') || '0')
     };
-
     Swal.fire({
       title: 'Mensaje',
       html: '¿Seguro de guardar los cambios?',
@@ -143,7 +131,6 @@ export class ModalEditarOrdenComponent implements OnInit {
       }
     });
   }
-
   salir() {
     this.modalRef.hide();
   }

@@ -5,7 +5,6 @@ import Swal from 'sweetalert2';
 import { BsModalService } from 'ngx-bootstrap/modal';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { NgxDropzoneComponent } from 'ngx-dropzone';
-
 interface ExistingFile {
   edo_id: number;
   ent_id: number;
@@ -20,7 +19,6 @@ interface ExistingFile {
   chk_botanu?: number;
   chk_botver?: number;
 }
-
 @Component({
   selector: 'app-modal-documentos',
   templateUrl: './modal-documentos.component.html',
@@ -31,49 +29,36 @@ export class ModalDocumentosComponent implements OnInit {
   @Input() entrega: any;
   @Input() permisos: any[] = [];
   @Output() onClose = new EventEmitter<void>();
-
   ObjetoMenu: any[] = [];
   objActual: any = null;
   objId: number = 0;
   permisosDoc: any[] = [];
   pendingDeletes: ExistingFile[] = [];
-
-  // Campos bloqueados
   entregable: string = '';
   fechaEntrega: string = '';
   descripcionControl: string = '';
-
-  // Archivos
   existingFiles: ExistingFile[] = [];
   files: File[] = [];
   MAX_FILES = 10;
   uploading: boolean = false;
   uploadProgress: number = 0;
-
-  // Preview
   previewName = '';
   previewSrc: SafeResourceUrl | string = '';
   isPdf = false;
   isDirectUrl = false;
   modalRefPreview: BsModalRef | null = null;
-
-  // Base URL (ajústala a tu backend)
   private readonly baseUrl = 'http://10.250.55.211/ticketsbackend/public/api';
-
   @ViewChild('previewTpl', { static: false }) previewTpl: TemplateRef<any> | undefined;
   @ViewChild(NgxDropzoneComponent, { static: false }) dz!: NgxDropzoneComponent;
-
   constructor(
     public modalRef: BsModalRef,
     private api: ApiService,
     private modalService: BsModalService,
     private sanitizer: DomSanitizer
   ) {}
-
   ngOnInit(): void {
     this.getObjetoMenu();
     this.obtenerPermisosDocumentos();
-
     if (this.entrega) {
       this.entregable = this.entrega.eor_descri || '';
       this.fechaEntrega = this.entrega.ent_fecent || '';
@@ -81,18 +66,14 @@ export class ModalDocumentosComponent implements OnInit {
         ? this.entrega.tbc_descri
         : 'SIN RESPUESTA';
     }
-
     this.loadExistingFiles();
   }
-
   getObjetoMenu(): void {
     const ObjetoMenu = localStorage.getItem('objetosMenu');
     this.ObjetoMenu = ObjetoMenu ? JSON.parse(ObjetoMenu) : [];
   }
-
   obtenerPermisosDocumentos(): void {
     const match = this.ObjetoMenu.find((item) => Number(item.obj_id) === 24);
-
     if (match && match.jsn_permis) {
       try {
         const parsed = typeof match.jsn_permis === 'string'
@@ -108,7 +89,6 @@ export class ModalDocumentosComponent implements OnInit {
       console.warn('⚠️ No se encontró el objeto DOCUMENTOS (obj_id=24) en objetosMenu');
     }
   }
-
   obtenerObjId(): void {
     const match = this.ObjetoMenu.find(item => item.obj_enlace === 'reporte-adquisicion');
     if (match) {
@@ -119,7 +99,6 @@ export class ModalDocumentosComponent implements OnInit {
       console.warn('⚠️ No se encontró el objeto DOCUMENTOS (reporte-adquisicion) en objetosMenu');
     }
   }
-
   loadExistingFiles() {
     const payload = {
       p_edo_id: 0,
@@ -129,10 +108,8 @@ export class ModalDocumentosComponent implements OnInit {
       p_ent_permis: this.permisosDoc || [],
       p_edo_activo: 1
     };
-
     this.api.getentregadocumentoslis(payload).subscribe({
       next: (data: any[]) => {
-        
         this.existingFiles = data.map((d: any) => ({
           ...d,
           chk_botanu: Number(d.chk_botanu),
@@ -154,38 +131,27 @@ export class ModalDocumentosComponent implements OnInit {
       }
     });
   }
-  
-  // Archivos nuevos desde Dropzone
   get totalFiles(): number {
     const existingCount = (this.existingFiles && this.existingFiles.length) ? this.existingFiles.length : 0;
     const newCount = (this.files && this.files.length) ? this.files.length : 0;
     return existingCount + newCount;
   }
-
   onSelect(event: any) {
     const added: File[] = event.addedFiles || [];
-
     for (const f of added) {
-      // 🔸 Validar límite máximo
       if (this.totalFiles >= this.MAX_FILES) {
         Swal.fire('Límite', `No puede agregar más de ${this.MAX_FILES} archivos.`, 'warning');
         break;
       }
-
-      // 🔸 Validar tamaño máximo (10 MB)
       if (f.size > 10 * 1024 * 1024) {
         Swal.fire('Error', f.name + ' supera el tamaño máximo de 10 MB.', 'error');
         continue;
       }
-
-      // 🔸 Validar tipo permitido
       const allowed = ['application/pdf', 'image/jpeg', 'image/jpg', 'image/png'];
       if (f.type && allowed.indexOf(f.type) === -1) {
         Swal.fire('Error', f.name + ' no es un tipo permitido.', 'error');
         continue;
       }
-
-      // 🔸 Verificar si el nombre ya existe (en archivos existentes o nuevos)
       const nombreLower = f.name.trim().toLowerCase();
       const existe =
         (this.existingFiles && this.existingFiles.some(x => 
@@ -194,9 +160,7 @@ export class ModalDocumentosComponent implements OnInit {
         (this.files && this.files.some(x => 
           x.name && x.name.trim().toLowerCase() === nombreLower
         ));
-
       if (existe) {
-        // ⚠️ Mostrar confirmación
         Swal.fire({
           title: 'Archivo duplicado',
           text: 'Ya existe un archivo con el nombre "' + f.name + '". ¿Desea registrarlo de todas formas?',
@@ -214,11 +178,8 @@ export class ModalDocumentosComponent implements OnInit {
             console.log('⏩ Archivo omitido:', f.name);
           }
         });
-
-        continue; // pasa al siguiente archivo
+        continue;
       }
-
-      // 🔸 Si no hay duplicado → agregar normalmente
       try {
         (f as any).objectURL = URL.createObjectURL(f);
       } catch (e) {}
@@ -229,14 +190,11 @@ export class ModalDocumentosComponent implements OnInit {
     this.files = this.files.filter(x => x !== f);
     try { URL.revokeObjectURL((f as any).objectURL); } catch {}
   }
-
-  // Eliminar archivo existente
   onRemoveExisting(f: any) {
     if (!f.chk_botanu || Number(f.chk_botanu) !== 1) {
       Swal.fire('Permiso denegado', 'No tiene permiso para eliminar este archivo.', 'warning');
       return;
     }
-
     Swal.fire({
       title: '¿Quitar archivo?',
       text: `${f.edo_numdoc || f.edo_nomfil} (se eliminará al guardar los cambios)`,
@@ -246,35 +204,22 @@ export class ModalDocumentosComponent implements OnInit {
       cancelButtonText: 'Cancelar'
     }).then(res => {
       if (res.isConfirmed) {
-        // 🔸 Quitamos visualmente de la lista
         this.existingFiles = this.existingFiles.filter(x => x.edo_id !== f.edo_id);
-
-        // 🔸 Lo agregamos a los pendientes de anulación
         this.pendingDeletes.push(f);
-
         Swal.fire('Marcado para eliminar', `${f.edo_numdoc || f.edo_nomfil} será eliminado al guardar.`, 'info');
       }
     });
   }
-  
-  // Ver archivo existente (preview)
   verArchivoExisting(f: ExistingFile) {
-    // 🔹 Validación básica
     if (!f.edo_nomfil) {
       Swal.fire('Error', 'No se encontró la ruta del archivo.', 'error');
       return;
     }
-
-    // 🔹 Verificación del tamaño del archivo antes de abrir
     const isLarge = f.hasOwnProperty('edo_tamfil') && Number(f['edo_tamfil']) > 5 * 1024 * 1024;
-
-    // 🔹 Si tiene URL pública y es grande (>5MB) => abrir directamente
     if (f.hasOwnProperty('edo_url') && f['edo_url'] && isLarge) {
       window.open(f['edo_url'], '_blank');
       return;
     }
-
-    // 🔹 Mostrar mensaje de carga
     Swal.fire({
       title: 'Cargando archivo',
       text: 'Por favor espere...',
@@ -284,32 +229,22 @@ export class ModalDocumentosComponent implements OnInit {
         Swal.showLoading();
       }
     });
-
-    // 🟦 Llamada al backend (solo si es pequeño o no hay URL)
     this.api.getFile({ file_path: f.edo_nomfil }).subscribe({
       next: (response: any) => {
         Swal.close();
-
         const res = response.body;
-
         try {
           const parsed = JSON.parse(res);
-
           if (parsed.success) {
-            // 🔸 Caso: backend marca archivo grande → abrir URL pública
             if (parsed.isLargeFile && parsed.url) {
               window.open(parsed.url, '_blank');
               return;
             }
-
-            // 🔸 Caso: base64 (archivo pequeño)
             if (parsed.data && parsed.data.content) {
               const mime = parsed.data.mime_type || 'application/pdf';
               const byteArray = Uint8Array.from(atob(parsed.data.content), c => c.charCodeAt(0));
               const blob = new Blob([byteArray], { type: mime });
               const blobUrl = URL.createObjectURL(blob);
-
-              // ⚙️ Si pesa más de 5MB, abrir nueva pestaña
               if (blob.size > 5 * 1024 * 1024) {
                 window.open(blobUrl, '_blank');
               } else {
@@ -319,11 +254,8 @@ export class ModalDocumentosComponent implements OnInit {
             }
           }
         } catch (e) {
-          // 🔸 Caso: backend devuelve PDF binario directo
           const blob = new Blob([res], { type: 'application/pdf' });
           const blobUrl = URL.createObjectURL(blob);
-
-          // ⚙️ Si pesa más de 5MB o ya tiene `edo_tamfil` > 5MB → pestaña nueva
           if (isLarge || blob.size > 5 * 1024 * 1024) {
             window.open(blobUrl, '_blank');
           } else {
@@ -339,15 +271,9 @@ export class ModalDocumentosComponent implements OnInit {
       }
     });
   }
-
-
-  
   tryOpenPdf(fileName: string, mime: string, blobUrl: string) {
     try {
-      // Prueba a abrirlo en el modal
       this.openPreview(fileName, mime, blobUrl, true);
-
-      // Si el visor interno (iframe) falla, abrir en nueva pestaña
       setTimeout(() => {
         const iframeEl = document.querySelector('iframe');
         if (iframeEl && iframeEl instanceof HTMLIFrameElement) {
@@ -362,19 +288,15 @@ export class ModalDocumentosComponent implements OnInit {
       window.open(blobUrl, '_blank');
     }
   }
-
-  // Abrir preview
   openPreview(name: string, mime: string, source: string, isDirectUrl: boolean = false) {
     this.previewName = name || 'archivo';
     this.isPdf = mime.includes('pdf') || name.toLowerCase().endsWith('.pdf');
     this.isDirectUrl = isDirectUrl;
-
     try {
       this.previewSrc = this.sanitizer.bypassSecurityTrustResourceUrl(source);
     } catch {
       this.previewSrc = source;
     }
-
     if (this.previewTpl && this.modalService) {
       this.modalRefPreview = this.modalService.show(this.previewTpl, {
         class: 'modal-xl modal-dialog-centered',
@@ -386,10 +308,8 @@ export class ModalDocumentosComponent implements OnInit {
       if (!w) Swal.fire('Aviso', 'El navegador bloqueó la vista previa emergente.', 'info');
     }
   }
-
   cerrarPreview() {
     if (this.modalRefPreview) this.modalRefPreview.hide();
-
     if (this.previewSrc && typeof this.previewSrc === 'string' && this.previewSrc.startsWith('blob:')) {
       try {
         URL.revokeObjectURL(this.previewSrc);
@@ -399,7 +319,6 @@ export class ModalDocumentosComponent implements OnInit {
       }
     }
   }
-
   verArchivoNew(f: File) {
     const reader = new FileReader();
     reader.onload = () => {
@@ -411,7 +330,6 @@ export class ModalDocumentosComponent implements OnInit {
     };
     reader.readAsDataURL(f);
   }
-
   handleImageError(event: Event) {
     const img = event.target as HTMLImageElement;
     img.src =
@@ -420,7 +338,6 @@ export class ModalDocumentosComponent implements OnInit {
     img.style.padding = '2rem';
     img.style.opacity = '0.5';
   }
-
   getFileSize(f: any) {
     if (!f) return '';
     const size = f.size || (typeof f === 'number' ? f : 0);
@@ -428,36 +345,29 @@ export class ModalDocumentosComponent implements OnInit {
     if (size < 1024 * 1024) return `${(size / 1024).toFixed(1)} KB`;
     return `${(size / (1024 * 1024)).toFixed(2)} MB`;
   }
-
   onAddClick(event: any, dz: any) {
     event.preventDefault();
     event.stopPropagation();
     if (dz && dz.showFileSelector) dz.showFileSelector();
   }
-
   onLabelClick(ev: Event) {
     ev.preventDefault();
     ev.stopPropagation();
     if (this.dz && this.dz.showFileSelector) this.dz.showFileSelector();
   }
-
   get canSave(): boolean {
     return !this.uploading && (this.files.length > 0 || this.pendingDeletes.length > 0);
   }
-
   private async eliminarPendientes() {
     if (!this.pendingDeletes.length) return;
-
     for (const f of this.pendingDeletes) {
       const payload = {
         p_edo_id: f.edo_id,
         p_edo_usureg: Number(localStorage.getItem('usuario') || 0)
       };
-
       try {
         const res: any = await this.api.getentregadocumentosanu(payload).toPromise();
         const result = Array.isArray(res) ? res[0] : res;
-
         if (result && result.error === 0) {
           console.log('✅ Documento anulado: ' + f.edo_nomfil);
         } else {
@@ -469,14 +379,11 @@ export class ModalDocumentosComponent implements OnInit {
     }
     this.pendingDeletes = [];
   }
-
   guardar() {
     if (!this.entrega || !this.entrega.ent_id) {
       Swal.fire('Error', 'No se ha identificado la entrega.', 'error');
       return;
     }
-
-    // 🟢 CASO 1: solo hay archivos para eliminar (sin nuevos)
     if (this.files.length === 0 && this.pendingDeletes.length > 0) {
       Swal.fire({
         title: 'Confirmar cambios',
@@ -503,22 +410,16 @@ export class ModalDocumentosComponent implements OnInit {
       });
       return;
     }
-
-    // 🔴 CASO 2: ni archivos nuevos ni eliminaciones → mensaje informativo
     if (this.files.length === 0 && this.pendingDeletes.length === 0) {
       Swal.fire('Info', 'No hay cambios para guardar.', 'info');
       return;
     }
-
-    // 🟢 CASO 3: subida de nuevos archivos (puede incluir eliminaciones)
     const form = new FormData();
     form.append('p_ent_id', String(this.entrega.ent_id));
     form.append('p_usu_id', String(Number(localStorage.getItem('usuario') || 0)));
     this.files.forEach(f => form.append('files[]', f));
-
     this.uploading = true;
     this.uploadProgress = 0;
-
     this.api.getentregadocumentosgra(form).subscribe({
       next: (evt: any) => {
         const type = (evt && evt.type) ? evt.type : null;
@@ -530,15 +431,9 @@ export class ModalDocumentosComponent implements OnInit {
           this.uploadProgress = 100;
           const res = evt.body;
           const r = Array.isArray(res) ? res[0] : res;
-
           if (r && r.error === 0) {
             Swal.fire('Éxito', r.mensa || 'Archivos subidos correctamente', 'success');
-
-            // 🧩 Si hay archivos pendientes de eliminar → ejecutarlos
-            this.eliminarPendientes()
-              .then(() => this.loadExistingFiles());
-
-            // 🔄 Limpieza de la cola
+            this.eliminarPendientes().then(() => this.loadExistingFiles());
             this.files = [];
           } else {
             Swal.fire('Error', (r && r.mensa) ? r.mensa : 'Error al subir archivos', 'error');
@@ -553,8 +448,6 @@ export class ModalDocumentosComponent implements OnInit {
       }
     });
   }
-
-
   cerrar() {
     this.modalRef.hide();
     this.onClose.emit();

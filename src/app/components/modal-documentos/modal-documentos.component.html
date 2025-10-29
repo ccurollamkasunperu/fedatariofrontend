@@ -57,7 +57,7 @@
                 </ngx-dropzone-label>
               </ngx-dropzone-preview>
 
-              <!-- ✅ Botones superpuestos (fuera del shadow DOM) -->
+              
               <button
                 *ngIf="f.chk_botanu == 1"
                 class="file-remove-btn visible"
@@ -144,7 +144,7 @@
   <button class="btn btn-primary" (click)="guardar()" [disabled]="uploading || (!files.length && !pendingDeletes.length)">Guardar</button>
 </div>
 
-  <!-- Preview Template -->
+  
   <ng-template #previewTpl>
     <div class="modal-header">
       <h5 class="modal-title">{{ previewName }}</h5>

@@ -7,51 +7,39 @@ import { DataTableDirective } from "angular-datatables";
 import { Subject } from "rxjs";
 import { analyzeAndValidateNgModules } from "@angular/compiler";
 import swal from "sweetalert2";
-
 interface PermisoBtn {
   bot_id: number;
   bot_descri: string;
   pus_activo: number | string;
 }
-
 @Component({
   selector: 'app-ticket',
   templateUrl: './ticket.component.html',
   styleUrls: ['./ticket.component.css']
 })
-
 export class TicketComponent implements OnInit {
-  
   private isXs(): boolean { return window.innerWidth < 768; }
-
   private permSet = new Set<number>();
-
   btnPerm = {
     nuevo: false,
     excel: false,
   };
-
   titulopant : string = "Adquisiciones";
   icono : string = "pe-7s-next-2";
   loading: boolean = false;
   exportarHabilitado: boolean = false;
   modalRef?: BsModalRef;
   selectedTicket: any;
-
   btnnuevo:boolean=false;
   btnexcel:boolean=false;
-
   ObjetoMenu: any[] = [];
   jsn_permis: any[] = [];
   ruta: string = '';
   objid : number = 0 ;
-
-  //INICIO PARAMETROS
   dataOrden:any;
   dataEstado:any;
   dataPrioridad:any;
   dataTemaAyuda:any;
-
   tkt_id: string = '';
   tkt_numero: string = '';
   est_id: string = '0';
@@ -64,7 +52,6 @@ export class TicketComponent implements OnInit {
   tkt_fecini:string='';
   tkt_fecfin:string='';
   tkt_activo: string = '';
-
   ord_id:string='0';
   ord_numero:string='';
   ord_numruc:string='';
@@ -76,8 +63,6 @@ export class TicketComponent implements OnInit {
   ord_fecfin:string='';
   usu_id:string='';
   ord_permis:string='';
-  //FIN DE PARAMETROS
-
   @ViewChild('OpenModalEditarTicket', { static: false }) OpenModalEditarTicket!: TemplateRef<any>;
   @ViewChild('OpenModalAnularTicket', { static: false }) OpenModalAnularTicket!: TemplateRef<any>;
   @ViewChild('OpenModalVerTicket', { static: false }) OpenModalVerTicket!: TemplateRef<any>;
@@ -88,14 +73,11 @@ export class TicketComponent implements OnInit {
   @ViewChild('OpenModalCerrarTicket', { static: false }) OpenModalCerrarTicket!: TemplateRef<any>;
   @ViewChild('OpenModalTrazabilidadTicket', { static: false }) OpenModalTrazabilidadTicket!: TemplateRef<any>;
   @ViewChild('OpenModalDerivarTicket', { static: false }) OpenModalDerivarTicket!: TemplateRef<any>;
-
   @ViewChild(DataTableDirective, { static: false })
   dtElement: DataTableDirective;
   isDtInitialized: boolean = false;
-
   rowSelected : any;
   dataanteriorseleccionada : any;
-  
   dtTrigger: Subject<any> = new Subject<any>();
   dtOptions: any = {
     destroy: false,
@@ -137,7 +119,6 @@ export class TicketComponent implements OnInit {
         } else {
           this.dataanteriorseleccionada = [];
         }
-
         const anular = document.getElementById('anular') as HTMLButtonElement | null;
         if (anular) {
           anular.disabled = false;
@@ -174,7 +155,6 @@ export class TicketComponent implements OnInit {
       },
     },
   };
-  
   constructor(
     private router: Router,
     private modalService: BsModalService,
@@ -182,7 +162,6 @@ export class TicketComponent implements OnInit {
     private appComponent: AppComponent
   ) {
   }
-
   ngOnInit(): void {
     this.SetMesIniFin();
     this.usu_id = localStorage.getItem('usuario');
@@ -193,9 +172,7 @@ export class TicketComponent implements OnInit {
     this.ObtenerObjId();
     this.loadDataProceso();
     console.log(this.ObjetoMenu[0]);
-    
     const onMobile = this.isXs();
-
     this.dtOptions = {
       destroy: false,
       retrieve: true,
@@ -218,12 +195,12 @@ export class TicketComponent implements OnInit {
       },
       scrollX: false,
       columnDefs: [
-        { targets: 8,  responsivePriority: 0 },     // ACCIONES (siempre visible)
-        { targets: 0,  responsivePriority: 1 },     // Nº
-        { targets: [4,5], responsivePriority: 2 },  // PRIORIDAD / ESTADO
-        { targets: 2,  responsivePriority: 3, className: 'dt-col-asunto' }, // ASUNTO
-        { targets: [1,3], responsivePriority: 4 },  // SOLICITADO / AGENTE
-        { targets: [6,7], responsivePriority: 5 }   // FECHAS (se ocultan antes)
+        { targets: 8,  responsivePriority: 0 },    
+        { targets: 0,  responsivePriority: 1 },    
+        { targets: [4,5], responsivePriority: 2 }, 
+        { targets: 2,  responsivePriority: 3, className: 'dt-col-asunto' },
+        { targets: [1,3], responsivePriority: 4 }, 
+        { targets: [6,7], responsivePriority: 5 }  
       ],
       rowCallback: (row: Node, data: any[] | Object, index: number) => {
       const self = this;
@@ -235,7 +212,6 @@ export class TicketComponent implements OnInit {
         } else {
           this.dataanteriorseleccionada = [];
         }
-
         const anular = document.getElementById('anular') as HTMLButtonElement | null;
         if (anular) {
           anular.disabled = false;
@@ -273,23 +249,18 @@ export class TicketComponent implements OnInit {
     },
     };
   }
-
   ngOnDestroy(): void {
     this.dtTrigger.unsubscribe();
   }
-
   descargaExcel() {
     let btnExcel = document.querySelector('#tablaDataProceso .dt-buttons .dt-button.buttons-excel.buttons-html5') as HTMLButtonElement;
     btnExcel.click();
   }
-
   @HostListener('window:resize') onResize() { this.adjustDt(); }
-
   ngAfterViewInit() {
     this.dtTrigger.next();
     setTimeout(() => this.adjustDt(), 0);
   }
-
   private adjustDt() {
     if (!this.dtElement) return;
     this.dtElement.dtInstance.then((dt: any) => {
@@ -297,17 +268,14 @@ export class TicketComponent implements OnInit {
       if (dt.responsive.recalc) dt.responsive.recalc();
     });
   }
-
   CerrarModalProceso() {
     this.loadDataProceso();
     if (this.modalRef) {
       this.modalRef.hide();
     }
   }
-
   loadDataProceso() {
     this.loading = true;
-
     const data_post = {
       p_ord_id: (this.ord_id == null || this.ord_id === '') ? 0 : parseInt(this.ord_id),
       p_ord_numero: (this.ord_numero == null || this.ord_numero === '') ? 0 : parseInt(this.ord_numero),
@@ -321,7 +289,6 @@ export class TicketComponent implements OnInit {
       p_usu_id: (this.usu_id == null || this.usu_id === '') ? 0 : parseInt(this.usu_id),
       p_ord_permis: this.jsn_permis
     };
-
     this.api.getordenlis(data_post).subscribe({
       next: (data: any[]) => {
         if (Array.isArray(data) && data.length > 0) {
@@ -350,74 +317,55 @@ export class TicketComponent implements OnInit {
       }
     });
   }
-
   ObtenerObjId(){
     this.ruta = this.router.url.replace(/^\/+/, '');
     console.log('Ruta actual:', this.ruta);
-
     const match = this.ObjetoMenu.find(item => item.obj_enlace === this.ruta);
     console.log('Objeto de menú coincidente:', match);
     if (match) {
       this.objid = match.obj_id;
       this.jsn_permis = match.jsn_permis;
-
       let permisos: PermisoBtn[] = [];
       const raw = match.jsn_permis;
-  
       try {
         const parsed = (typeof raw === 'string') ? JSON.parse(raw) : raw;
         permisos = Array.isArray(parsed) ? parsed : [];
       } catch {
         permisos = [];
       }
-
       const ids = permisos.filter(p => Number(p.pus_activo) === 1).map(p => Number(p.bot_id));
-      
       this.permSet = new Set<number>(ids);
-
       this.btnPerm.nuevo = this.permSet.has(1);
       this.btnPerm.excel = this.permSet.has(5);
-      
       console.log('Permisos activos:', [...this.permSet]);
     } else {
       console.log('Ruta no encontrada en objetosMenu');
     }
   }
-
   private resetPermFlags() {
     Object.keys(this.btnPerm).forEach(k => (this.btnPerm as any)[k] = false);
   }
-
-  // Helper opcional (por si quieres consultar en línea)
   hasPerm(botId: number): boolean {
     return this.permSet.has(botId);
   }
-
   getObjetoMenu() {
     const ObjetoMenu = localStorage.getItem('objetosMenu');
     this.ObjetoMenu = ObjetoMenu ? JSON.parse(ObjetoMenu) : [];
   }
-
-  //FUNCIONES
   SetMesIniFin(){
     const today = new Date();
-
     const yyyy = today.getFullYear();
     const mm = (today.getMonth() + 1).toString().padStart(2, '0');
     const dd = today.getDate().toString().padStart(2, '0');
-
     this.tkt_fecini = `${yyyy}-${mm}-01`;
     this.tkt_fecfin = `${yyyy}-${mm}-${dd}`;
   }
-
   TicketIns() {
     this.router.navigate(['/nuevo-ticket']);
   }
-  
   TicketEdit(tkt_id: string) {
     this.router.navigate(['/editar-ticket',tkt_id]); 
   }
-
   restrictNumeric(e) {
     let input;
     if (e.metaKey || e.ctrlKey) {
@@ -435,42 +383,34 @@ export class TicketComponent implements OnInit {
     input = String.fromCharCode(e.which);
     return !!/[\d\s]/.test(input);
   }
-
   loadEstado() {
     const data_post = {
       p_est_id: 0,
       p_est_activo: 1
     };
-
     this.api.getestadossel(data_post).subscribe((data: any) => {
       this.dataEstado = data;
     });
   }
-  
   loadPrioridad() {
     const data_post = {
       p_pri_id: 0,
       p_pri_activo: 1
     };
-
     this.api.getprioridadsel(data_post).subscribe((data: any) => {
       this.dataPrioridad = data;
     });
   }
-  
   loadTemadeAyuda() {
     const data_post = {
       p_tea_id: 0,
       p_tea_idpadr: 0,
       p_tea_activo: 1
     };
-
     this.api.gettemaayudasel(data_post).subscribe((data: any) => {
       this.dataTemaAyuda = data;
     });
   }
-
-  //PARSE BUTTONS ARRAY 
   safeParse(jsonStr: string): any[] {
     try {
       return JSON.parse(jsonStr || '[]');
@@ -479,11 +419,9 @@ export class TicketComponent implements OnInit {
       return [];
     }
   }
-
   getIdButton(bot_id: number, item: any) {
     console.log('Botón presionado:', bot_id, 'para ticket:', item.tkt_numero);
     this.selectedTicket = item;
-
     switch (bot_id) {
       case 2:
         this.modalRef = this.modalService.show(this.OpenModalEditarTicket);
@@ -520,5 +458,4 @@ export class TicketComponent implements OnInit {
         break;
     }
   }
-
 }

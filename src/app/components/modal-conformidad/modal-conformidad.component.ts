@@ -2,26 +2,21 @@ import { Component, Input, OnInit, Output, EventEmitter, ViewChild, ElementRef }
 import { BsModalRef } from 'ngx-bootstrap/modal';
 import { ApiService } from 'src/app/services/api.service';
 import Swal from 'sweetalert2';
-
 @Component({
   selector: 'app-modal-conformidad',
   templateUrl: './modal-conformidad.component.html',
   styleUrls: ['./modal-conformidad.component.css']
 })
-
 export class ModalConformidadComponent implements OnInit {
   @Input() entrega: any;
   @Output() onClose = new EventEmitter<void>();
   @ViewChild('inputEmision', { static: false }) inputEmision!: ElementRef;
-
   loading: boolean = false;
   cargado: boolean = false;
   bloquearCampos: boolean = true;
-
   showForm: boolean = true;
   modoEdicion: boolean = true;
   registroEditando: any = null;
-
   nuevoRegistro: any = {
     p_cnf_fecemi: '',
     p_cnf_monpre: 0,
@@ -31,21 +26,17 @@ export class ModalConformidadComponent implements OnInit {
     p_cnf_cuprau: 0,
     p_cnf_observ: ''
   };
-
   dataConformidad: any[] = [];
   permisos: any = null;
-
   constructor(
     public modalRef: BsModalRef,
     private api: ApiService
   ) {}
-
   ngOnInit(): void {
     this.cargado = false;
     this.loadPermisos();
     this.loadConformidades();
   }
-
   loadPermisos() {
     try {
       const raw = localStorage.getItem('objetosMenu');
@@ -71,7 +62,6 @@ export class ModalConformidadComponent implements OnInit {
       this.permisos = null;
     }
   }
-
   loadConformidades() {
     this.loading = false;
     const payload = {
@@ -80,7 +70,6 @@ export class ModalConformidadComponent implements OnInit {
       p_usu_id: Number(localStorage.getItem('usuario') || 0),
       p_cnf_permis: this.permisos ? this.permisos.jsn_permis : []
     };
-
     this.api.getconformidadlis(payload).subscribe({
       next: (data: any[]) => {
         this.dataConformidad = Array.isArray(data) ? data : [];
@@ -95,18 +84,16 @@ export class ModalConformidadComponent implements OnInit {
       }
     });
   }
-
   tienePermiso(botId: number): boolean {
     if (!this.permisos || !this.permisos.jsn_permis) return false;
     return this.permisos.jsn_permis.some(
       (p: any) => p.bot_id === botId && Number(p.pus_activo) === 1
     );
   }
-
   abrirNuevo() {
     this.modoEdicion = false;
     this.showForm = true;
-    this.bloquearCampos = false; // 🔓 oculta botón Nuevo
+    this.bloquearCampos = false;
     this.nuevoRegistro = {
       p_cnf_fecemi: '',
       p_cnf_monpre: 0,
@@ -122,7 +109,6 @@ export class ModalConformidadComponent implements OnInit {
       }
     }, 200);
   }
-
   cancelarNuevo() {
     this.bloquearCampos = true;
     this.nuevoRegistro = {
@@ -138,8 +124,6 @@ export class ModalConformidadComponent implements OnInit {
     this.registroEditando = null;
     this.showForm = true;
   }
-
-
   verDocumento(c: any) {
     if (!c.url_documento) {
       Swal.fire('Aviso', 'El documento no tiene una URL asociada.', 'warning');
@@ -147,23 +131,18 @@ export class ModalConformidadComponent implements OnInit {
     }
     window.open(c.url_documento, '_blank');
   }
-
   onMontoInput(event: any) {
     const input = event.target;
     let valor = input.value.replace(/[^0-9.]/g, '');
     if (valor.startsWith('.')) valor = '0' + valor;
-
     const partes = valor.split('.');
     if (partes.length > 2)
       valor = partes[0] + '.' + partes.slice(1).join('');
-
     const entero = partes[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',');
     let decimal = partes[1] ? partes[1].substring(0, 2) : '';
-
     input.value = decimal !== '' ? `${entero}.${decimal}` : entero;
     this.nuevoRegistro.p_cnf_monpre = input.value;
   }
-
   onMontoBlur() {
     const num = parseFloat(
       (this.nuevoRegistro.p_cnf_monpre || '').replace(/,/g, '')
@@ -175,11 +154,9 @@ export class ModalConformidadComponent implements OnInit {
           maximumFractionDigits: 2
         });
   }
-
   toggleCheckbox(event: any, field: string) {
     this.nuevoRegistro[field] = event.target.checked ? 1 : 0;
   }
-
   getMontoNumerico(): number {
     const limpio = (this.nuevoRegistro.p_cnf_monpre || '')
       .toString()
@@ -187,7 +164,6 @@ export class ModalConformidadComponent implements OnInit {
     const num = parseFloat(limpio);
     return isNaN(num) ? 0 : num;
   }
-
   editarConformidad(c: any) {
     this.modoEdicion = true;
     this.showForm = true;
@@ -208,7 +184,6 @@ export class ModalConformidadComponent implements OnInit {
       }
     }, 200);
   }
-
   guardarConformidad() {
     const monto = this.getMontoNumerico();
     const payload = {
@@ -223,7 +198,6 @@ export class ModalConformidadComponent implements OnInit {
       p_cnf_observ: this.nuevoRegistro.p_cnf_observ || '',
       p_cnf_usureg: Number(localStorage.getItem('usuario') || 0)
     };
-
     Swal.fire({
       title: 'Mensaje',
       html: this.modoEdicion
@@ -266,7 +240,6 @@ export class ModalConformidadComponent implements OnInit {
       }
     });
   }
-  
   eliminarConformidad(c: any) {
     Swal.fire({
       title: '¿Eliminar?',
@@ -281,7 +254,6 @@ export class ModalConformidadComponent implements OnInit {
       }
     });
   }
-
   cerrar() {
     this.modalRef.hide();
     this.onClose.emit();

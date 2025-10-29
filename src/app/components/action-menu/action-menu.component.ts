@@ -1,5 +1,4 @@
 import { Component, EventEmitter, Output, Input, ChangeDetectionStrategy } from '@angular/core';
-
 @Component({
   selector: 'app-action-menu',
   template: `
@@ -27,7 +26,6 @@ export class ActionMenuComponent {
   @Input() showValidar = false;
   @Input() showCerrar = false;
   @Input() showTrazabilidad = false;
-
   @Output() select = new EventEmitter<string>();
   emit(action: string) { this.select.emit(action); }
 }

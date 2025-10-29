@@ -10,7 +10,7 @@
     <p class="mt-2 mb-0 small">Cargando datos...</p>
   </div>
   
-  <!-- 🔹 VISUALIZAR -->
+  
   <ng-container *ngIf="modo === 'ver'; else editarTpl">
     <div class="row g-2">
       <div class="col-6">
@@ -68,11 +68,11 @@
     </div>
   </ng-container>
 
-  <!-- 🔹 EDITAR -->
+  
   <ng-template #editarTpl>
     <div *ngIf="cargado">
       <div class="row align-items-end g-2">
-        <!-- U. Orgánica -->
+        
         <div class="col-12">
           <label class="form-label">U. Orgánica <span class="text-danger">*</span></label>
           <ng-select
@@ -84,7 +84,7 @@
             <ng-option *ngFor="let a of dataAreas" [value]="a.ard_id">{{ a.ard_descri }}</ng-option>
           </ng-select>
         </div>
-        <!-- Especialista -->
+        
         <div class="col-12">
           <label class="form-label">Especialista</label>
           <ng-select
@@ -96,7 +96,7 @@
             <ng-option *ngFor="let e of dataEspecialistas" [value]="e.esp_id">{{ e.esp_nomcom }}</ng-option>
           </ng-select>
         </div>
-        <!-- N° SIAF -->
+        
         <div class="col-1">
           <label class="form-label">SIAF <span class="text-danger">*</span></label>
           <input type="text" class="form-control form-control-sm" [(ngModel)]="orden.ord_nusiaf" (keypress)="soloNumeros($event)" maxlength="10" placeholder="00000" />
