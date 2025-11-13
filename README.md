@@ -1,5 +1,5 @@
 <<<<<<< HEAD
-# qasoftwarefrontend
+# fedatariofrontend
 =======
 # Estructura
 
